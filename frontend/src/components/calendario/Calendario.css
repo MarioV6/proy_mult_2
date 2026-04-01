@@ -1,0 +1,98 @@
+
+.calendar-page {
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.calendar-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.title-nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background-color: var(--bg-card);
+  padding: 0.8rem 2rem;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.title-container {
+  min-width: 200px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.title-nav h2 {
+  color: var(--accent-light);
+  font-size: 1.5rem;
+}
+
+.nav-btn-circle {
+  background: var(--bg-deep);
+  border: none;
+  color: var(--accent);
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.3s ease;
+}
+
+.nav-btn-circle:hover { background: var(--accent); color: white; }
+
+/* Contenedor principal de la rejilla */
+.calendar-main-container {
+  width: 100%;
+}
+
+.day-names-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.day-name { text-align: center; font-weight: bold; color: var(--accent-light); font-size: 0.8rem; text-transform: uppercase; }
+
+/* Manejo de desbordamiento para la animación de entrada/salida */
+.grid-overflow-handler {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.8rem;
+  width: 100%;
+}
+
+.calendar-day {
+  aspect-ratio: 1.2;
+  background-color: var(--bg-card);
+  border-radius: 15px;
+  padding: 1rem;
+  display: flex; flex-direction: column; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative; transition: all 0.3s ease;
+}
+
+.calendar-day.empty { background: transparent; border: none; cursor: default; }
+.calendar-day:hover:not(.empty) { background-color: rgba(157, 78, 221, 0.1); }
+.calendar-day.has-note { border-left: 4px solid var(--accent); }
+.day-number { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+.note-indicator { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin-top: 5px; }
+
+/* Modal y Notas */
+.note-preview { position: absolute; top: 110%; left: 0; width: 100%; background: var(--bg-sidebar); padding: 0.8rem; border-radius: 10px; border: 1px solid var(--accent); z-index: 50; pointer-events: none; font-size: 0.85rem; color: var(--text-secondary); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.note-modal { background: var(--bg-sidebar); padding: 2.5rem; border-radius: 25px; width: 450px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); position: relative; }
+.close-btn { position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; border-radius: 50%; }
+.close-btn:hover { color: var(--accent); background: rgba(157, 78, 221, 0.1); }
+.save-btn { width: 100%; padding: 1.2rem; background: var(--accent); color: white; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+textarea { width: 100%; height: 180px; background: var(--bg-deep); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; color: white; padding: 1.2rem; margin-bottom: 1.5rem; outline: none; resize: none; font-family: inherit; }
+
