@@ -16,7 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from apps.users.interfaces.health_check import check_db_connection
+from apps.users.interfaces.controller import NotasView, TelasView, PreciosView
+from apps.users.interfaces.calculo_views import CalculadoraTelasView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/db-check/', check_db_connection, name='db_check'),
+    path('api/notas/', NotasView.as_view(), name='gestionar_nota'),
+    path('api/notas/mes/', NotasView.as_view(), name='notas_mes'),
+    path('api/telas/', TelasView.as_view(), name='gestionar_telas'),
+    path('api/precios/', PreciosView.as_view(), name='gestionar_precios'),
+    path('api/calculadora/', CalculadoraTelasView.as_view(), name='calculadora_telas'),
 ]

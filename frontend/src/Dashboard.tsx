@@ -1,11 +1,26 @@
 
 import { motion } from "framer-motion";
-import { Calendar, LayoutDashboard, Box } from "lucide-react";
+import { Calendar, LayoutDashboard, Box, Database } from "lucide-react";
 import { useState } from "react";
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("calendar");
+
+  const testDBConnection = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/db-check/");
+      const data = await response.json();
+      if (data.status === "ok") {
+        alert("¡Conexión exitosa!: " + data.message);
+      } else {
+        alert("Error en la conexión: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error al conectar con el servidor:", error);
+      alert("No se pudo conectar con el servidor backend (asegúrate de que esté corriendo en el puerto 8000)");
+    }
+  };
 
   return (
     <div className="dashboard-layout">
@@ -40,6 +55,18 @@ const Dashboard = () => {
           >
             <Box size={20} />
             <span>Inventario</span>
+          </motion.button>
+
+          {/* Botón de prueba de DB debajo de Inventario */}
+          <motion.button 
+            className="nav-button"
+            whileHover={{ scale: 1.05, backgroundColor: "#3a0ca3" }}
+            whileTap={{ scale: 0.95 }}
+            onClick={testDBConnection}
+            style={{ marginTop: "1rem", backgroundColor: "#4361ee", color: "white" }}
+          >
+            <Database size={20} />
+            <span>Probar DB</span>
           </motion.button>
         </div>
       </motion.nav>
