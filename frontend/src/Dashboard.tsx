@@ -1,11 +1,25 @@
-
 import { motion } from "framer-motion";
-import { Calendar, LayoutDashboard, Box, Database } from "lucide-react";
-import { useState } from "react";
+import { Calendar, LayoutDashboard, Box, Database, User } from "lucide-react";
+import { useState, useEffect } from "react";
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("calendar");
+  const [externalUser, setExternalUser] = useState({ id: 0, name: "Cargando..." });
+
+  useEffect(() => {
+    const fetchExternalUser = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/api/external-user/");
+        const data = await response.json();
+        setExternalUser(data);
+      } catch (error) {
+        console.error("Error fetching external user:", error);
+        setExternalUser({ id: 0, name: "Laravel no conectado" });
+      }
+    };
+    fetchExternalUser();
+  }, []);
 
   const testDBConnection = async () => {
     try {
@@ -83,8 +97,20 @@ const Dashboard = () => {
             <LayoutDashboard size={24} color="#9d4edd" />
             <span style={{ fontSize: "1.2rem", fontWeight: "600" }}>Dashboard de Precios</span>
           </div>
-          <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-            miercoles, 25 de marzo de 2026
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", background: "rgba(67, 97, 238, 0.1)", padding: "0.5rem 1rem", borderRadius: "12px", border: "1px solid rgba(67, 97, 238, 0.2)" }}>
+              <div style={{ background: "#4361ee", padding: "5px", borderRadius: "50%", display: "flex" }}>
+                <User size={16} color="white" />
+              </div>
+              <div style={{ textAlign: "left", lineHeight: "1.1" }}>
+                <div style={{ fontWeight: "700", color: "#4361ee", fontSize: "0.9rem" }}>{externalUser.name}</div>
+                <div style={{ fontSize: "0.7rem", color: "#666" }}>ID: {externalUser.id}</div>
+              </div>
+            </div>
+            <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+              {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
           </div>
         </motion.header>
 
@@ -105,4 +131,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

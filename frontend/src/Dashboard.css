@@ -80,10 +80,31 @@ body, html, #root {
   color: var(--text-primary);
 }
 
-.nav-link.active {
+.nav-link.active, .nav-button.active {
   background: var(--accent);
   color: white;
   box-shadow: 0 4px 15px rgba(157, 78, 221, 0.3);
+}
+
+.nav-button {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  width: 100%;
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.nav-button:hover {
+  background: rgba(157, 78, 221, 0.1);
+  color: var(--text-primary);
 }
 
 /* Main Area */

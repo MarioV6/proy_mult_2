@@ -1,11 +1,42 @@
 
 import { BrowserRouter as Router, Routes, Route, Link, Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar as CalendarIcon, Box, LayoutDashboard, Database } from "lucide-react";
+import { Calendar as CalendarIcon, Box, LayoutDashboard, Database, User } from "lucide-react";
+import { useState, useEffect } from "react";
 import Calendario from "./components/calendario/Calendario";
+import Inventario from "./components/inventario/Inventario";
 import "./Dashboard.css";
 
 const DashboardLayout = () => {
+  // CONFIGURACIÓN: Cambia este ID por el del usuario que quieras mostrar (ej: 8 para Marco)
+  const USER_ID_TO_SHOW = 8; 
+  const [externalUser, setExternalUser] = useState({ id: 0, name: "Cargando..." });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        // Llamamos a la nueva ruta en web.php que sí lee la sesión
+        const response = await fetch("http://localhost:8001/user-info-sesion", {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setExternalUser({
+            id: data.id || 0,
+            name: data.name || "Usuario Desconocido"
+          });
+        } else {
+          setExternalUser({ id: 0, name: "Sesión no iniciada" });
+        }
+      } catch (error) {
+        console.error("Error conectando con Laravel:", error);
+        setExternalUser({ id: 0, name: "Sin Conexión (8001)" });
+      }
+    };
+    fetchUser();
+  }, []);
+
   const testDBConnection = async () => {
     try {
       const response = await fetch("http://localhost:8000/api/db-check/");
@@ -17,7 +48,7 @@ const DashboardLayout = () => {
       }
     } catch (error) {
       console.error("Error al conectar con el servidor:", error);
-      alert("No se pudo conectar con el servidor backend (asegúrate de que esté corriendo en el puerto 8000)");
+      alert("No se pudo conectar con el servidor backend (Puerto 8000)");
     }
   };
 
@@ -48,7 +79,6 @@ const DashboardLayout = () => {
             <span>Inventario</span>
           </Link>
           
-          {/* Botón de prueba de DB */}
           <motion.button 
             className="nav-button"
             whileHover={{ scale: 1.05, backgroundColor: "#3a0ca3" }}
@@ -78,8 +108,22 @@ const DashboardLayout = () => {
       <div className="main-wrapper">
         <header className="topbar">
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            
             <span style={{ fontSize: "1.2rem", fontWeight: "600" }}>Antes de los Hilos</span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", background: "rgba(67, 97, 238, 0.1)", padding: "0.5rem 1.2rem", borderRadius: "12px", border: "1px solid rgba(67, 97, 238, 0.2)" }}>
+              <div style={{ background: "#4361ee", padding: "6px", borderRadius: "50%", display: "flex" }}>
+                <User size={16} color="white" />
+              </div>
+              <div style={{ textAlign: "left", lineHeight: "1.1" }}>
+                <div style={{ fontWeight: "700", color: "#4361ee", fontSize: "0.95rem" }}>{externalUser.name}</div>
+                <div style={{ fontSize: "0.75rem", color: "#666" }}>ID: {externalUser.id}</div>
+              </div>
+            </div>
+            <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+              {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
           </div>
         </header>
 
@@ -105,7 +149,7 @@ function App() {
         <Route path="/" element={<DashboardLayout />}>
           <Route index element={<Home />} />
           <Route path="calendario" element={<Calendario />} />
-          <Route path="inventario" element={<div>Inventario</div>} />
+          <Route path="inventario" element={<Inventario />} />
         </Route>
       </Routes>
     </Router>
@@ -113,4 +157,3 @@ function App() {
 }
 
 export default App;
-

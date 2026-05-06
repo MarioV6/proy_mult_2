@@ -73,3 +73,18 @@ class CalculoExtra(models.Model):
     class Meta:
         db_table = 'calculo_extras'
         app_label = 'users'
+
+# 5. INVENTARIO
+class Inventario(models.Model):
+    nombre = models.CharField(max_length=100)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    unidad_medida = models.CharField(max_length=20)
+    minimo_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    categoria = models.CharField(max_length=50, default='General')
+    color = models.CharField(max_length=50, default='N/A')
+    estado = models.CharField(max_length=20, default='Disponible')
+    actualizado_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'inventario'
+        app_label = 'users'

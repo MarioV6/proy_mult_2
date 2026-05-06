@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..infrastructure.models import NotaDiaria, Tela, TelaPrecio, Prenda, Calculo, CalculoTela, Extra, CalculoExtra
+from ..infrastructure.models import NotaDiaria, Tela, TelaPrecio, Prenda, Calculo, CalculoTela, Extra, CalculoExtra, Inventario
 
 class NotaDiariaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,4 +20,9 @@ class TelaPrecioSerializer(serializers.ModelSerializer):
 class CalculoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Calculo
+        fields = '__all__'
+
+class InventarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Inventario
         fields = '__all__'

@@ -5,6 +5,16 @@ from django.views import View
 import json
 from ..infrastructure.models import NotaDiaria, Tela, TelaPrecio
 from django.db import transaction
+from ..application.use_cases import UserIntegrationUseCases
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ExternalUserView(View):
+    def get(self, request):
+        user_id = request.GET.get('id')
+        user_data = UserIntegrationUseCases.get_external_user(user_id)
+        response = JsonResponse(user_data)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
 
 @method_decorator(csrf_exempt, name='dispatch')
 class NotasView(View):
