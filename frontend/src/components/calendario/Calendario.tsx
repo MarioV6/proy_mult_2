@@ -11,6 +11,8 @@ interface Tela {
   nombre: string;
   precio_real: number;
   precio_predicho: number;
+  variacion_porcentaje: number;
+  tendencia: 'up' | 'down' | 'stable';
 }
 
 // Movido fuera para evitar que se re-cree al escribir en el textarea de notas
@@ -95,7 +97,7 @@ const Calendario = () => {
 
   const fetchTelas = async (fecha: string) => {
     try {
-      const response = await fetch(`${API_BASE}/calculadora/?fecha=${fecha}&nombre=${searchTela}&orden_precio=${sortOrder}`);
+      const response = await fetch(`${API_BASE}/metricas-ml/?fecha=${fecha}&nombre=${searchTela}&orden_precio=${sortOrder}`);
       if (response.ok) {
         const data = await response.json();
         setTelas(data);
@@ -113,17 +115,39 @@ const Calendario = () => {
     }
   };
 
-  // Recalcular total automáticamente
+  // Recalcular total automáticamente llamando al backend
   useEffect(() => {
-    if (selectedTela) {
-      // Usamos el precio predicho para que varíe según el día
-      const precioAUsar = selectedTela.precio_predicho || selectedTela.precio_real;
-      const subtotal = metros * precioAUsar;
-      setTotal(subtotal + Number(extras) + Number(manoObra));
-    } else {
-      setTotal(Number(extras) + Number(manoObra));
-    }
-  }, [selectedTela, metros, extras, manoObra]);
+    const calcularTotal = async () => {
+      const fecha = selectedDay ? getNoteKey(selectedDay) : new Date().toISOString().split('T')[0];
+
+      const payload = {
+        fecha,
+        telas: selectedTela ? [{ tela_id: selectedTela.id, metros: Number(metros) || 0 }] : [],
+        extras: Number(extras) || 0,
+        mano_obra: Number(manoObra) || 0
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/calculadora/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTotal(data.total_final);
+        }
+      } catch (error) {
+        console.error("Error al calcular total en backend:", error);
+        // Fallback simple si falla el backend
+        const precioAUsar = selectedTela?.precio_predicho || selectedTela?.precio_real || 0;
+        setTotal((Number(metros) || 0) * precioAUsar + (Number(extras) || 0) + (Number(manoObra) || 0));
+      }
+    };
+
+    calcularTotal();
+  }, [selectedTela, metros, extras, manoObra, selectedDay]);
 
   const changeMonth = (offset: number) => {
     setDirection(offset);
@@ -334,10 +358,10 @@ const Calendario = () => {
                       <div className="card-content">
                         <div className="card-header">
                           <span className="tela-name">{t.nombre}</span>
-                          {t.precio_real > 0 && (
-                            <div className={`trend-badge ${t.precio_predicho > t.precio_real ? 'up' : 'down'}`}>
-                              {t.precio_predicho > t.precio_real ? '↑' : '↓'} 
-                              {Math.abs(((t.precio_predicho - t.precio_real) / t.precio_real) * 100).toFixed(1)}%
+                          {t.tendencia !== 'stable' && (
+                            <div className={`trend-badge ${t.tendencia}`}>
+                              {t.tendencia === 'up' ? '↑' : '↓'} 
+                              {t.variacion_porcentaje.toFixed(1)}%
                             </div>
                           )}
                         </div>

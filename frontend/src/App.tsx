@@ -5,6 +5,7 @@ import { Calendar as CalendarIcon, Box, LayoutDashboard, Database, User } from "
 import { useState, useEffect } from "react";
 import Calendario from "./components/calendario/Calendario";
 import Inventario from "./components/inventario/Inventario";
+import Chatbot from "./components/chatbot/Chatbot";
 import "./Dashboard.css";
 
 const DashboardLayout = () => {
@@ -131,6 +132,7 @@ const DashboardLayout = () => {
           <Outlet /> {}
         </main>
       </div>
+      <Chatbot />
     </div>
   );
 };

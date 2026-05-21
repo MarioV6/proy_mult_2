@@ -41,7 +41,7 @@ def predecir_precio(tela_id, fecha_objetivo_str):
         return None
 
 @method_decorator(csrf_exempt, name='dispatch')
-class CalculadoraTelasView(View):
+class MetricasMLView(View):
     def get(self, request):
         # Filtros básicos de telas y precios
         fecha_str = request.GET.get('fecha', datetime.now().strftime('%Y-%m-%d'))
@@ -65,12 +65,25 @@ class CalculadoraTelasView(View):
             
             # Obtener predicción ML
             precio_predicho = predecir_precio(tela.id, fecha_str)
+            precio_predicho = precio_predicho or precio_actual
+            
+            # Calcular variación y tendencia
+            variacion = 0.0
+            tendencia = 'stable'
+            if precio_actual > 0:
+                variacion = round(((precio_predicho - precio_actual) / precio_actual) * 100, 2)
+                if variacion > 0:
+                    tendencia = 'up'
+                elif variacion < 0:
+                    tendencia = 'down'
             
             data.append({
                 'id': tela.id,
                 'nombre': tela.nombre,
                 'precio_real': precio_actual,
-                'precio_predicho': precio_predicho or precio_actual
+                'precio_predicho': precio_predicho,
+                'variacion_porcentaje': abs(variacion),
+                'tendencia': tendencia
             })
             
         # Ordenar por precio si se solicita
@@ -83,29 +96,50 @@ class CalculadoraTelasView(View):
         response["Access-Control-Allow-Origin"] = "*"
         return response
 
+    def options(self, request, *args, **kwargs):
+        response = JsonResponse({}, status=200)
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CalculadoraTelasView(View):
     def post(self, request):
         # Recibir datos para el cálculo final
         try:
             data = json.loads(request.body)
             # Formula: (Metros * Precio) + Extras + ManoObra
             telas_items = data.get('telas', []) # Lista de {tela_id, metros}
-            extras = float(data.get('extras', 0))
-            mano_obra = float(data.get('mano_obra', 0))
+            extras = float(data.get('extras', 0) or 0)
+            mano_obra = float(data.get('mano_obra', 0) or 0)
             fecha = data.get('fecha', datetime.now().strftime('%Y-%m-%d'))
             
             subtotal_telas = 0
             detalles_calculo = []
             
             for item in telas_items:
-                tela = Tela.objects.get(id=item['tela_id'])
-                precio_obj = TelaPrecio.objects.filter(tela=tela, fecha__lte=fecha).order_by('-fecha').first()
-                precio = float(precio_obj.precio) if precio_obj else 0
+                tela_id = item.get('tela_id')
+                metros = float(item.get('metros', 0) or 0)
                 
-                costo_item = float(item['metros']) * precio
+                if not tela_id:
+                    continue
+                    
+                tela = Tela.objects.get(id=tela_id)
+                
+                # Obtener predicción ML para la fecha
+                precio = predecir_precio(tela.id, fecha)
+                if precio is None:
+                    # Fallback al precio real más cercano
+                    precio_obj = TelaPrecio.objects.filter(tela=tela, fecha__lte=fecha).order_by('-fecha').first()
+                    precio = float(precio_obj.precio) if precio_obj else 0.0
+                
+                costo_item = metros * precio
                 subtotal_telas += costo_item
                 detalles_calculo.append({
-                    'tela': tela.nombre,
-                    'metros': item['metros'],
+                    'tela_id': tela.id,
+                    'tela_nombre': tela.nombre,
+                    'metros': metros,
                     'precio_unidad': precio,
                     'subtotal': round(costo_item, 2)
                 })
@@ -131,6 +165,6 @@ class CalculadoraTelasView(View):
     def options(self, request, *args, **kwargs):
         response = JsonResponse({}, status=200)
         response["Access-Control-Allow-Origin"] = "*"
-        response["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+        response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         response["Access-Control-Allow-Headers"] = "Content-Type"
         return response

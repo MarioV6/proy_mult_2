@@ -177,6 +177,27 @@
 .status-badge.disponible { color: #2ecc71; background: rgba(46, 204, 113, 0.1); }
 .status-badge.agotado { color: #ff4757; background: rgba(255, 71, 87, 0.1); }
 
+/* Imagen de Inventario */
+.inventory-image-container {
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  margin: 0.5rem 0;
+}
+
+.inventory-item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.inventory-card:hover .inventory-item-image {
+  transform: scale(1.05);
+}
+
 .stock-info {
   background: rgba(0, 0, 0, 0.2);
   padding: 1rem;
@@ -231,4 +252,94 @@
   color: #ff4757;
   cursor: pointer;
   padding: 5px;
+}
+
+/* Paginación */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 3rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-btn:not(:disabled):hover {
+  background: var(--accent);
+}
+
+.page-number {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page-number.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.page-number:hover:not(.active) {
+  border-color: var(--accent);
+  color: white;
+}
+
+.inventory-stats {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: 5px;
+}
+
+/* Loader */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 1rem;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--accent);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

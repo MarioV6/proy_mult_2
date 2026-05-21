@@ -19,6 +19,11 @@ const Inventario: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Filtros
   const [filterText, setFilterText] = useState('');
   const [filterColor, setFilterColor] = useState('');
@@ -37,15 +42,28 @@ const Inventario: React.FC = () => {
   const [savingId, setSavingId] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchItems = async () => {
+  const fetchItems = async (page: number = 1) => {
+    setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/inventario/');
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        nombre: filterText,
+        color: filterColor,
+        estado: filterStatus
+      });
+
+      const response = await fetch(`http://localhost:8000/api/inventario/?${queryParams}`);
       const data = await response.json();
-      const sanitizedData = Array.isArray(data) ? data.map((item: any) => ({
+      
+      const sanitizedItems = Array.isArray(data.items) ? data.items.map((item: any) => ({
         ...item,
         cantidad: Number(item.cantidad)
       })) : [];
-      setItems(sanitizedData);
+
+      setItems(sanitizedItems);
+      setTotalPages(data.total_pages || 1);
+      setCurrentPage(data.current_page || 1);
+      setTotalItems(data.total_items || 0);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching inventory:', error);
@@ -53,20 +71,14 @@ const Inventario: React.FC = () => {
     }
   };
 
+  // Recargar al cambiar filtros (vuelve a página 1)
   useEffect(() => {
-    fetchItems();
+    fetchItems(1);
+  }, [filterText, filterColor, filterStatus]);
+
+  useEffect(() => {
     return () => stopAdjusting();
   }, []);
-
-  const filteredItems = items.filter(item => {
-    const matchesText = item.nombre.toLowerCase().includes(filterText.toLowerCase()) || 
-                       item.categoria.toLowerCase().includes(filterText.toLowerCase());
-    const matchesColor = filterColor === '' || item.color.toLowerCase().includes(filterColor.toLowerCase());
-    const matchesStatus = filterStatus === 'Todos' || 
-                         (filterStatus === 'Agotado' && item.estado === 'Agotado') ||
-                         (filterStatus === 'Disponible' && item.estado === 'Disponible');
-    return matchesText && matchesColor && matchesStatus;
-  });
 
   const updateLocalQuantity = (id: number, delta: number) => {
     setItems(prevItems => prevItems.map(item => {
@@ -109,11 +121,10 @@ const Inventario: React.FC = () => {
         }),
       });
       if (response.ok) {
-        fetchItems(); // Recargamos para actualizar estado (Disponible/Agotado)
+        fetchItems(currentPage); // Recargamos la página actual
         setTimeout(() => setSavingId(null), 1000);
       } else {
         const errorData = await response.json();
-        console.error("Error del servidor:", errorData);
         setSavingId(null);
         alert("Error al guardar: " + (errorData.error || "Ver consola"));
       }
@@ -142,7 +153,7 @@ const Inventario: React.FC = () => {
           color: '',
           estado: 'Disponible'
         });
-        fetchItems();
+        fetchItems(1); // Volver a pág 1 para ver el nuevo item
       }
     } catch (error) {
       console.error('Error adding item:', error);
@@ -155,19 +166,20 @@ const Inventario: React.FC = () => {
         const response = await fetch(`http://localhost:8000/api/inventario/${id}/`, {
           method: 'DELETE',
         });
-        fetchItems();
+        fetchItems(currentPage);
       } catch (error) {
         console.error('Error deleting item:', error);
       }
     }
   };
 
-  if (loading) return <div className="loading">Cargando inventario...</div>;
-
   return (
     <div className="inventario-container">
       <div className="inventario-header">
-        <h2>Gestión de Inventario</h2>
+        <div>
+          <h2>Gestión de Inventario</h2>
+          <p className="inventory-stats">Mostrando {items.length} de {totalItems} insumos</p>
+        </div>
         <div className="header-actions">
           <button className="add-button" onClick={() => setIsAdding(!isAdding)}>
             {isAdding ? <X size={20} /> : <Plus size={20} />}
@@ -179,14 +191,14 @@ const Inventario: React.FC = () => {
       <div className="filters-section">
         <input 
           type="text" 
-          placeholder="Filtrar por nombre o tipo..." 
+          placeholder="Buscar..." 
           value={filterText}
           onChange={e => setFilterText(e.target.value)}
           className="filter-input"
         />
         <input 
           type="text" 
-          placeholder="Filtrar por color..." 
+          placeholder="Color..." 
           value={filterColor}
           onChange={e => setFilterColor(e.target.value)}
           className="filter-input"
@@ -196,7 +208,7 @@ const Inventario: React.FC = () => {
           onChange={e => setFilterStatus(e.target.value)}
           className="filter-select"
         >
-          <option value="Todos">Todos los estados</option>
+          <option value="Todos">Todos</option>
           <option value="Disponible">Disponibles</option>
           <option value="Agotado">Agotados</option>
         </select>
@@ -239,64 +251,116 @@ const Inventario: React.FC = () => {
         </form>
       )}
 
-      <div className="inventory-grid">
-        {filteredItems.map(item => (
-          <div key={item.id} className={`inventory-card ${item.estado === 'Agotado' ? 'out-of-stock' : ''}`}>
-            <div className="card-header">
-              <div className="tags">
-                <span className="category-tag">{item.categoria}</span>
-                {item.color && <span className="color-tag" style={{borderLeft: `4px solid ${item.color.toLowerCase()}`}}>{item.color}</span>}
-              </div>
-              <button onClick={() => handleDelete(item.id)} className="delete-btn" title="Marcar como agotado">
-                <Trash2 size={16} />
-              </button>
-            </div>
-            
-            <div className="card-body">
-              <h3>{item.nombre}</h3>
-              <span className={`status-badge ${item.estado.toLowerCase()}`}>{item.estado}</span>
-            </div>
-            
-            <div className="stock-info">
-              <div className="current-stock">
-                <span className="label">Stock Actual:</span>
-                <div className="quantity-controls">
-                  <button 
-                    type="button"
-                    onMouseDown={() => startAdjusting(item.id, -1)}
-                    onMouseUp={stopAdjusting}
-                    onMouseLeave={stopAdjusting}
-                    disabled={item.estado === 'Agotado' && item.cantidad <= 0}
-                  >-</button>
-                  <span className="value">{item.cantidad} {item.unidad_medida}</span>
-                  <button 
-                    type="button"
-                    onMouseDown={() => startAdjusting(item.id, 1)}
-                    onMouseUp={stopAdjusting}
-                    onMouseLeave={stopAdjusting}
-                  >+</button>
+      {loading ? (
+        <div className="loading-container">
+          <div className="loader"></div>
+          <p>Cargando insumos...</p>
+        </div>
+      ) : (
+        <>
+          <div className="inventory-grid">
+            {items.map(item => (
+              <div key={item.id} className={`inventory-card ${item.estado === 'Agotado' ? 'out-of-stock' : ''}`}>
+                <div className="card-header">
+                  <div className="tags">
+                    <span className="category-tag">{item.categoria}</span>
+                    {item.color && <span className="color-tag" style={{borderLeft: `4px solid ${item.color.toLowerCase()}`}}>{item.color}</span>}
+                  </div>
+                  <button onClick={() => handleDelete(item.id)} className="delete-btn" title="Marcar como agotado">
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-              </div>
-              
-              <button 
-                type="button"
-                className={`save-stock-btn ${savingId === item.id ? 'saved' : ''}`}
-                onClick={() => saveQuantity(item.id)}
-                disabled={savingId === item.id}
-              >
-                {savingId === item.id ? '✓' : 'Guardar Cambios'}
-              </button>
+                
+                <div className="card-body">
+                  <h3>{item.nombre}</h3>
+                  <span className={`status-badge ${item.estado.toLowerCase()}`}>{item.estado}</span>
+                </div>
 
-              {item.cantidad <= item.minimo_stock && item.estado !== 'Agotado' && (
-                <div className="warning">
-                  <AlertTriangle size={14} />
-                  <span>Bajo Stock</span>
+                <div className="inventory-image-container">
+                  <img 
+                    src={`/telas/${item.nombre.toLowerCase().replace(/ /g, "_")}.jpg`} 
+                    alt={item.nombre}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x150?text=Sin+Imagen';
+                    }}
+                    className="inventory-item-image"
+                  />
                 </div>
-              )}
-            </div>
+                
+                <div className="stock-info">
+                  <div className="current-stock">
+                    <span className="label">Stock Actual:</span>
+                    <div className="quantity-controls">
+                      <button 
+                        type="button"
+                        onMouseDown={() => startAdjusting(item.id, -1)}
+                        onMouseUp={stopAdjusting}
+                        onMouseLeave={stopAdjusting}
+                        disabled={item.estado === 'Agotado' && item.cantidad <= 0}
+                      >-</button>
+                      <span className="value">{item.cantidad} {item.unidad_medida}</span>
+                      <button 
+                        type="button"
+                        onMouseDown={() => startAdjusting(item.id, 1)}
+                        onMouseUp={stopAdjusting}
+                        onMouseLeave={stopAdjusting}
+                      >+</button>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    type="button"
+                    className={`save-stock-btn ${savingId === item.id ? 'saved' : ''}`}
+                    onClick={() => saveQuantity(item.id)}
+                    disabled={savingId === item.id}
+                  >
+                    {savingId === item.id ? '✓' : 'Guardar Cambios'}
+                  </button>
+
+                  {item.cantidad <= item.minimo_stock && item.estado !== 'Agotado' && (
+                    <div className="warning">
+                      <AlertTriangle size={14} />
+                      <span>Bajo Stock</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button 
+                disabled={currentPage === 1} 
+                onClick={() => fetchItems(currentPage - 1)}
+                className="page-btn"
+              >
+                Anterior
+              </button>
+              
+              <div className="page-numbers">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button 
+                    key={i + 1}
+                    className={`page-number ${currentPage === i + 1 ? 'active' : ''}`}
+                    onClick={() => fetchItems(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button 
+                disabled={currentPage === totalPages} 
+                onClick={() => fetchItems(currentPage + 1)}
+                className="page-btn"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
